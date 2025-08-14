@@ -1,0 +1,33 @@
+name: Deploy AWS Security Group
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-sg:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Create AWS Security Group
+        run: |
+          SG_ID=$(aws ec2 create-security-group \
+            --group-name MySecurityGroup \
+            --description "Security group created via GitHub Actions" \   # --vpc-id vpc-1234567890abcdef0
+            --query 'GroupId' --output text)
+
+          echo "Created Security Group ID: $SG_ID"
+
+          aws ec2 authorize-security-group-ingress \
+            --group-id $SG_ID \
+            --protocol tcp \
+            --port 22 \
+            --cidr 0.0.0.0/0
+
+          echo "Ingress rule added: TCP port 22 from 0.0.0.0/0"
