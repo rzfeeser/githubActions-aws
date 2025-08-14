@@ -19,8 +19,8 @@ jobs:
         run: |
           SG_ID=$(aws ec2 create-security-group \
             --group-name MySecurityGroup \
-            --description "Security group created via GitHub Actions" \   # --vpc-id vpc-1234567890abcdef0
-            --output text)   # --query 'GroupId'
+            --description "Security group created via GitHub Actions" --vpc-id vpc-00dc4047f163335b3 \
+            --query 'GroupId' --output text)   # --query 'GroupId'
 
           echo "Created Security Group ID: $SG_ID"
 
