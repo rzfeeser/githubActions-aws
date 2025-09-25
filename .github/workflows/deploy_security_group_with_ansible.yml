@@ -1,0 +1,46 @@
+name: Deploy AWS Security Group (Ansible)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vpcid:
+        description: required VPC ID of where the SG is located
+        required: true
+        type: string
+        default: vpc-00dc4047f163335b3
+
+jobs:
+  deploy-sg:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Set up Python and Ansible
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install "ansible>=9.0.0" boto3 botocore
+          ansible-galaxy collection install amazon.aws
+
+      - name: Run playbook to create Security Group
+        env:
+          VPC_ID: ${{ github.event.inputs.vpcid }}
+        run: |
+          ansible-playbook -i "localhost," -c local ansible/playbook-create-sg.yml \
+            -e vpc_id="$VPC_ID" -e aws_region="us-west-2"
+
+      - name: Append result to job summary (if present)
+        if: always()
+        run: |
+          if [ -f sg_output.txt ]; then
+            echo "### Created Security Group" >> "$GITHUB_STEP_SUMMARY"
+            cat sg_output.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
