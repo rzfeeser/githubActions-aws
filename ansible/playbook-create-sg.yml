@@ -1,0 +1,41 @@
+- name: Create an AWS Security Group in a given VPC
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aws_region: "{{ aws_region | default('us-west-2') }}"
+    vpc_id: "{{ vpc_id | default('vpc-00dc4047f163335b3') }}"
+    sg_name: "MySecurityGroup"
+    sg_description: "Security group created via GitHub Actions + Ansible"
+
+  tasks:
+    - name: Create security group with SSH ingress
+      amazon.aws.ec2_security_group:        # ec2_security_group.py --name mysecuritygroup --description "" ...
+        name: "{{ sg_name }}"
+        description: "{{ sg_description }}"
+        vpc_id: "{{ vpc_id }}"
+        state: present
+        rules:
+          - proto: tcp
+            ports: 22
+            cidr_ip: 0.0.0.0/0
+            rule_desc: "SSH from anywhere"
+      register: sg_result
+
+    - name: Show created security group details
+      ansible.builtin.debug:
+        msg:
+          group_id: "{{ sg_result.group_id | default(sg_result.resource_id | default('unknown')) }}"
+          group_name: "{{ sg_name }}"
+          vpc_id: "{{ vpc_id }}"
+          region: "{{ aws_region }}"
+
+    - name: Write SG details to a file for the workflow summary
+      ansible.builtin.copy:
+        dest: ./sg_output.txt
+        content: |
+          - Group ID: {{ sg_result.group_id | default(sg_result.resource_id | default('unknown')) }}
+          - Group Name: {{ sg_name }}
+          - VPC ID: {{ vpc_id }}
+          - Region: {{ aws_region }}
