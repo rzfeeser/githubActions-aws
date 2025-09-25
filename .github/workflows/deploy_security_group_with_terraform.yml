@@ -1,0 +1,54 @@
+name: Deploy AWS Security Group (Terraform)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vpcid:
+        description: required VPC ID of where the SG is located
+        required: true
+        type: string
+        default: vpc-00dc4047f163335b3
+
+jobs:
+  deploy-sg:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infra
+        env:
+          TF_VAR_vpc_id: ${{ github.event.inputs.vpcid }}
+          TF_VAR_region: us-west-2
+        run: terraform apply -auto-approve
+
+      - name: Capture outputs
+        working-directory: infra
+        run: |
+          terraform output -raw security_group_id > ../sg_id.txt
+          echo "### Created Security Group" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ID: $(cat ../sg_id.txt)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- VPC: ${{ github.event.inputs.vpcid }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Region: us-west-2" >> "$GITHUB_STEP_SUMMARY"
