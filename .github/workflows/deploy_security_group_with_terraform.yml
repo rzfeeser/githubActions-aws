@@ -52,3 +52,14 @@ jobs:
           echo "- ID: $(cat ../sg_id.txt)" >> "$GITHUB_STEP_SUMMARY"
           echo "- VPC: ${{ github.event.inputs.vpcid }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Region: us-west-2" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sleep for 60 seconds
+        run: sleep 60s
+        shell: bash
+
+      - name: Terraform Destroy
+        working-directory: infra
+        env:
+          TF_VAR_vpc_id: ${{ github.event.inputs.vpcid }}
+          TF_VAR_region: us-west-2
+        run: terraform destroy -auto-approve       
