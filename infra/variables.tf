@@ -11,7 +11,7 @@ variable "vpc_id" {
 
 variable "sg_name" {
   type    = string
-  default = "MySecurityGroup-tf"
+  default = "MySecurityGroup-tf-lifecycled"
 }
 
 variable "sg_description" {
