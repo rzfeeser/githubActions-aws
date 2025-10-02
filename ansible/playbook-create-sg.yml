@@ -32,6 +32,7 @@
           region: "{{ aws_region }}"
 
     - name: Write SG details to a file for the workflow summary
+      changed_when: false
       ansible.builtin.copy:
         dest: ./sg_output.txt
         content: |
